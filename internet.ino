@@ -1,4 +1,3 @@
-
 #include"wifi_.h"
 #include"verify.h"
 
@@ -10,7 +9,7 @@ bool serve = false;
 bool recieving = false;
 bool read_d = false;
 
-Adafruit_PCD8544 display = Adafruit_PCD8544(7, 6, 5, 4, 3);
+Adafruit_PCD8544 display = Adafruit_PCD8544(3, 4, 5, 6, 7);
 
 ///uint16_t mi = 0;
 
@@ -23,6 +22,8 @@ bool new_ra = true;
 bool once = true;
 bool once_2 = true;
 bool sel = false;
+
+uint16_t bright = 1;
 
 uint8_t sizz = 0;
 uint8_t incr = 1;
@@ -55,12 +56,12 @@ bool activate_apps[3] = {false , false , false};        //// for alarm , tourchl
 
 const uint16_t PINUP  = A1;
 const uint16_t PINDOWN = A2;
-const uint16_t PINSELECT = A3;
-const uint16_t PINHOME = A0;
-const uint8_t light = 9;
-const uint8_t vibrator = 8;
+const uint16_t PINSELECT = 10;
+const uint16_t PINHOME = 2;
+const uint16_t light = 9;
+const uint16_t vibrator = 8;
 ///const uint8_t BUTTONS = 2;
-
+//A3 battery , A0 backlight..........
 
 uint8_t point_pos = 15;  /// default pointer position for the main menu.
 uint8_t point_pos_a = 12;
@@ -96,13 +97,13 @@ void setup() {
 
   Serial.begin(115200);
   Serial1.begin(115200);
-clear_b();
+  clear_b();
 
 
   pinMode(light , OUTPUT);
   digitalWrite(light, LOW);
   display.begin();
-  display.setContrast(60);
+  display.setContrast(60);             /// contrast........
 
   display.display();   /// starts display by showing the preset Adafruit logo.  according to the terms of the lincese...
   milli(1000);
@@ -128,15 +129,9 @@ clear_b();
   digitalWrite(vibrator, LOW);
   digitalWrite(light, LOW);
 
-  ///digitalWrite(BUTTONS, LOW);
-
-
-
   milli(3000);
 
   /// attachInterrupt(digitalPinToInterrupt(BUTTONS) , button_actions , RISING);
-
-
 
   { ///  RST scope......
 
@@ -189,7 +184,7 @@ void loop() {
 
       if (Serial1.find("+IPD,")) {
 
-        Serial.println("yes");
+        //Serial.println("yes");
 
         recieving = true;
         unsigned long long tim;
@@ -199,23 +194,18 @@ void loop() {
         tim = millis();
         while (!over) {
 
-
           char aa = Serial1.read();
           connections = atoi(&aa);
-
-
-
 
           if (Serial1.find("message=")) {
             new_ra2  = true;
             digitalWrite(vibrator , HIGH);
-            Serial.print("connection is : ");
-            Serial.println(connections);
+            //Serial.print("connection is : ");
+            ///Serial.println(connections);
 
             bool conn = false;
 
-            Serial.println("found");
-
+            ///  Serial.println("found");
 
             while (!conn) {
 
@@ -231,8 +221,7 @@ void loop() {
                   store[a] = '\0';
                   Serial.println("end");
 
-
-                  const String recieved_page = "<h1> RECIEVED </h1>";
+                  const String recieved_page = "<html><h1><b>RECIEVED<b></h1></html>";                   ////
 
                   Serial1.print("AT+CIPSEND=");
                   Serial1.print(connections);
@@ -251,7 +240,7 @@ void loop() {
 
                     while (Serial1.available()) {
                       got[b] = Serial1.read();
-                      Serial.print(got[b]);
+                      ///   Serial.print(got[b]);
                       ++b;
                       got[b] = '\0';
                     }
@@ -260,14 +249,12 @@ void loop() {
 
                     while (!Serial1.available()) {
                       if ( millis() - tim >= 5000) {
-                        Serial.println("over!");
+                        /// Serial.println("over!");
                         sto = true;
                         break;
                       }
                     }
                   }
-
-
 
                   for (uint16_t t = 0; t < strlen(store) ; ++t) {
                     char &i = store[t];
@@ -284,8 +271,9 @@ void loop() {
                     }
                   }
 
-                  Serial.print("message : ");
-                  Serial.println(store);
+                  /* Serial.print("message : ");
+                    Serial.println(store);
+                  */
 
                   for (uint16_t i = 0; i < strlen(store); ++i, ++las) {
                     get_messages[las] = store[i];
@@ -363,7 +351,8 @@ void loop() {
 
       }
       else if (activate_apps[0]) {       /// test
-
+        backlight();
+        wif();
       }
       else if (activate_apps[1]) {
 
@@ -399,9 +388,6 @@ void loop() {
 
 ///.........................................................................
 
-
-
-
 void clear_b() {
   milli(1500);
 
@@ -411,19 +397,18 @@ void clear_b() {
 
 }
 
-
 void main_menu() {
 
+
+  display.setTextColor(BLACK);
+  display.setTextSize(1);
   display.clearDisplay();
 
   display.setCursor(display.width() / 4 , 0);
-  display.setTextColor(BLACK);
-  display.setTextSize(1);
+
   display.print("Main Menu");
 
-
   display.drawLine(0 , 10 , display.width() - 1, 10 , BLACK); /// basically to undeline "MAIN MENU".
-
 
   display.setCursor(5 , 15);
   display.setTextColor(locate[0][1] , BLACK);    ///locate[0][1] returns a single value of that address..
@@ -469,8 +454,6 @@ void messages_menu() {
 ///...............................................................................................................
 
 
-
-
 void highlight_main() {
 
   const short *ptr = NULL;
@@ -488,8 +471,6 @@ void highlight_main() {
   }  ///
 
 }  /// end of highlight........
-
-
 
 
 void main_select() {
@@ -526,8 +507,7 @@ void apps_menu() {
 
   display.setCursor(5 , 12);
   display.setTextColor(locate_apps[0][1], BLACK);
-  display.print("Alarm");
-
+  display.print("Backlight");
 
   display.setCursor(5 , 24);
   display.setTextColor(locate_apps[1][1] , BLACK);
@@ -538,8 +518,6 @@ void apps_menu() {
   display.setTextColor(locate_apps[2][1] , BLACK);
   display.print("Settings");
 
-
-
   display.setCursor(0 , point_pos_a);
   display.setTextColor(BLACK);
   display.print('>');
@@ -547,7 +525,6 @@ void apps_menu() {
 
 
 }/// end of apps menu...........
-
 
 
 void highlight_apps() {
@@ -587,10 +564,9 @@ void rst() {
 }
 
 
-
 void apps_select() {
 
-  for (byte i = 0 ; i < 3 ; ++i) {
+  for (byte i = 0 ; i < 3 ; i++) {
 
     if (locate_apps[i][1] == 0) {
       activate_m[1] = false;
@@ -934,10 +910,9 @@ void wif_con() {
     uint8_t siz = 0;
     siz = 0;
     char store[max_l];                    ////
-    char net[8];
+    char net[2];
+    net[0] = '\0';
     conn = false;
-
-
 
     Serial1.println("AT+CWLAP");
     milli(2000);
@@ -969,8 +944,9 @@ void wif_con() {
           if (siz > 0 && siz != 1) {
             siz -= 1;
           }
-          Serial.print("number of wirless connections found : ");
-          Serial.println(siz);
+          /*  Serial.print("number of wirless connections found : ");
+            Serial.println(siz);
+          */
           sizz = siz;
           conn = true;
           break;
@@ -980,18 +956,18 @@ void wif_con() {
 
 
     }
-    Serial.println();
+    // Serial.println();
 
     for (byte i = 0; i < 8; ++i) {
       store[i] = ' ';
     }
-    Serial.print(store);
-
-    Serial.println("getting");
+    // Serial.print(store);
+    // Serial.println("getting");
     get_creds(store, "+CWLAP:(" , siz);       /// function of sort wifi details
 
-    Serial.println();
-    Serial.println(store);
+    /*Serial.println();
+      Serial.println(store);
+    */
     button_actions();
     clear_b();
     while (!serve && siz != 0 && !sel) {
@@ -1006,8 +982,7 @@ void wif_con() {
       }
       button_actions();
 
-      Serial.println(incr);        ////
-
+      //      Serial.println(incr);        ////
 
       display.clearDisplay();
       display.setTextSize(1);
@@ -1083,69 +1058,57 @@ void wif_con() {
         once_2 = false;
       }  ///
 
-
-
-
     }
-
 
     if (sel) {
 
-      conn = false;
-      e = 0;
-      tim = 0;
       extract(store, incr, net);
 
-      display.clearDisplay();
-      display.print("Attempting to connect to ");
-      display.print(store);
+      bool proce = true;
 
-      Serial1.print("AT+CWJAP=");
-      Serial1.print("\"");
-      Serial1.print(store);
-      Serial1.print("\"");
-      Serial1.print(",");
-      Serial1.println("\"" "\"");
-      milli(1000);
+      if (net[0] == 'C') {
+
+        proce = false;
+        display.clearDisplay();
+        display.println("network protected!");
+        display.println("password feature coming soon!!");
+        display.display();
+        milli(500);
+        activate_m[0] = false;
+        activate_m[1] = false;
+
+        activate_apps[0] = false;
+        activate_apps[1] = false;
+        activate_apps[2] = false;
+
+        main_m  = true;
+        rst_t = true;
+
+      }  ///
 
 
-      store[0] = NULL;
-      display.display();
+      if (proce) {
 
-      while (!conn) {
-        while (Serial1.available()) {
-          store[e] = Serial1.read();
-          display.print(".");
-          display.display();
-          Serial.print(store[e]);  /// test........
-          ++e;
-        }
-
-        tim = millis();
-        while (!Serial1.available()) {
-
-          store[e] = '\0';
-          if (millis() - tim >= 13000) {
-            display.clearDisplay();
-            display.display();
-
-            conn = true;
-            break;
-          }
-
-        }
-
-      } /// end of while !conn
-
-      if (strstr(store, "OK")) {
-        serve = true;
-        new_ra = true;
-
-        Serial1.println("AT+CIFSR");
-        milli(1000);
         conn = false;
-        store[0] = NULL;
         e = 0;
+        tim = 0;
+
+        display.clearDisplay();
+        display.print("Attempting to connect to ");
+        display.print(store);
+
+        Serial1.print("AT+CWJAP=");
+        Serial1.print("\"");
+        Serial1.print(store);
+        Serial1.print("\"");
+        Serial1.print(",");
+        Serial1.println("\"" "\"");
+        milli(1000);
+
+
+        store[0] = NULL;
+        display.display();
+
         while (!conn) {
           while (Serial1.available()) {
             store[e] = Serial1.read();
@@ -1159,118 +1122,157 @@ void wif_con() {
           while (!Serial1.available()) {
 
             store[e] = '\0';
-            if (millis() - tim >= 3000) {
+            if (millis() - tim >= 13000) {
+              display.clearDisplay();
+              display.display();
+
               conn = true;
-              char g[20];
-
-              if (strstr(store , "STAIP,\"")) {
-
-
-
-                int e = strlen(store);
-
-                int a = 0;
-
-                for ( int n = 0 ; n < e ; ++n) {
-
-                  if (store[n] == '"') {
-
-                    for ( int p = n + 1 ; p < e ; ++p, ++a) {
-                      if (store[p] == '"') {
-                        break;
-                      }
-
-                      g[a] = store[p];
-                    }
-                    g[a] = '\0';
-                    break;
-                  }
-
-
-                }
-                Serial.println(g);
-
-              } ////
-
-
-              char t[] = "TCP";
-              Serial1.print("AT+CIPSTART=");
-              Serial1.print("\"");
-              Serial1.print(t);
-              Serial1.print("\"");
-              Serial1.print(",");
-              Serial1.print("\"192.168.43.178\"");
-              Serial1.print(",");
-              Serial1.println("80");
-              milli(2000);
-              check();
-
-
-              char dat[] = "GET /updateip.php?ip=";
-              char dat2[] = "&username=Victor+Tomoloju";
-
-              int len = strlen(dat) + strlen(dat2) + strlen(g) + 2;
-              Serial1.print("AT+CIPSEND=");
-              Serial1.println(len);
-              milli(1000);
-              check();
-
-
-              Serial1.print(dat);
-              Serial1.print(g);
-              Serial1.println(dat2);
-              milli(2000);
-              check();
-
-
-              Serial1.println("AT+CIPMUX=1");
-              milli(1000);
-              check();
-
-
-              Serial1.println("AT+CIPSERVER=1,334");
-              milli(1000);
-              check();
-
-
               break;
-            }   /// end of if mill
+            }
 
-
-
-
-          }  //// end
-
+          }
 
         } /// end of while !conn
-        display.clearDisplay();
-        display.print("CONNECTED!");
-        display.display();
-        milli(500);
-        net_re();
-        activate_apps[2] = true;
 
-      }
+        if (strstr(store, "OK")) {
+          serve = true;
+          new_ra = true;
+
+          Serial1.println("AT+CIFSR");
+          milli(1000);
+          conn = false;
+          store[0] = NULL;
+          e = 0;
+          while (!conn) {
+            while (Serial1.available()) {
+              store[e] = Serial1.read();
+              display.print(".");
+              display.display();
+              Serial.print(store[e]);  /// test........
+              ++e;
+            }
+
+            tim = millis();
+            while (!Serial1.available()) {
+
+              store[e] = '\0';
+              if (millis() - tim >= 3000) {
+                conn = true;
+                char g[20];
+
+                if (strstr(store , "STAIP,\"")) {
+
+
+
+                  int e = strlen(store);
+
+                  int a = 0;
+
+                  for ( int n = 0 ; n < e ; ++n) {
+
+                    if (store[n] == '"') {
+
+                      for ( int p = n + 1 ; p < e ; ++p, ++a) {
+                        if (store[p] == '"') {
+                          break;
+                        }
+
+                        g[a] = store[p];
+                      }
+                      g[a] = '\0';
+                      break;
+                    }
+
+
+                  }
+                  Serial.println(g);
+
+                } ////
+
+                char t[] = "TCP";
+                Serial1.print("AT+CIPSTART=");
+                Serial1.print("\"");
+                Serial1.print(t);
+                Serial1.print("\"");
+                Serial1.print(",");
+                Serial1.print("\"192.168.43.178\"");
+                Serial1.print(",");
+                Serial1.println("80");
+                milli(2000);
+                check();
+
+
+                char dat[] = "GET /updateip.php?ip=";
+                char dat2[] = "&username=Victor+Tomoloju";
+
+                int len = strlen(dat) + strlen(dat2) + strlen(g) + 2;
+                Serial1.print("AT+CIPSEND=");
+                Serial1.println(len);
+                milli(1000);
+                check();
+
+                Serial1.print(dat);
+                Serial1.print(g);
+                Serial1.println(dat2);
+                milli(2000);
+                check();
+
+
+                Serial1.println("AT+CIPMUX=1");
+                milli(1000);
+                check();
+
+                Serial1.println("AT+CIPSERVER=1,334");
+                milli(1000);
+                check();
+
+
+                break;
+              }   /// end of if mill
+
+            }  //// end
+
+
+          } /// end of while !conn
+          display.clearDisplay();
+          display.print(F("CONNECTED!"));
+          display.display();
+          milli(500);
+          net_re();
+          activate_apps[2] = true;
+
+        }
+        else {
+          display.clearDisplay();
+          display.print("Connection Failed!");
+          display.display();
+          milli(500);
+          net_re();
+          serve = false;
+          activate_apps[2] = true;
+
+        }
+        sel = false;
+        ///
+
+      }///
+
       else {
         display.clearDisplay();
-        display.print("Connection Failed!");
-        display.display();
+        display.println(F("Connection can't be established!"));
         milli(500);
-        net_re();
-        serve = false;
         activate_apps[2] = true;
+      }  ///
 
-      }
-      sel = false;
-    }  ///
+    }
     /// temporary test....
-
 
   }
 
+
   else {
     display.clearDisplay();
-    display.print("CONNECTED!");
+    display.print(F("CONNECTED!"));
     display.display();
     milli(500);
     net_re();
@@ -1279,7 +1281,7 @@ void wif_con() {
   }
 
 }
-void net_re() {
+void net_re() {                                             ////  <---------------------------------------
   temp = 0 ;
   start = 0;
   point_pos_wi = 0;
@@ -1319,7 +1321,7 @@ void wif_sat() {
     uint8_t a = 0;
     uint16_t tim = 0;
     display.clearDisplay();
-    display.print("Checking Status....");
+    display.print(F("Checking Status...."));
     display.display();
 
     Serial1.println("AT+CWJAP?");
@@ -1343,8 +1345,6 @@ void wif_sat() {
 
       }
 
-
-
     } /// end of while !conn
 
 
@@ -1354,7 +1354,7 @@ void wif_sat() {
       display.setTextSize(1);
       display.setCursor(6 , 0);
       display.setTextColor(BLACK);  ////<----- fix
-      display.println("CONNECTED to :");
+      display.println(F("CONNECTED to :"));
       display.display();
 
       uint8_t get_t = 0;
@@ -1393,7 +1393,7 @@ void wif_sat() {
 
 
       display.print(">");
-      display.print("Disconnect");
+      display.print(F("Disconnect"));
       display.display();
       button_actions();
 
@@ -1403,7 +1403,7 @@ void wif_sat() {
     else {
       serve = false;
       display.clearDisplay();
-      display.print("NOT CONNECTED");
+      display.print(F("NOT CONNECTED"));
       display.display();
     }
 
@@ -1466,4 +1466,40 @@ void wif_sat() {
   }///
   button_actions();
 
+}
+
+void backlight() {
+
+
+  display.setCursor(0, 1);
+  display.setTextSize(1);
+  display.clearDisplay();
+  display.print(F("intensity: "));
+  if (bright == 0) {
+    display.print("ON");
+  }
+  else if (bright != 0) {
+    display.print("OFF");
+  }
+
+  display.display();
+
+
+  if (digitalRead(PINDOWN)) {
+
+    bright = 255;
+
+    analogWrite(A0, bright);
+
+    milli(200);
+  }
+
+  else if (digitalRead(PINUP)) {
+
+    bright = 0;
+
+    analogWrite(A0, bright);
+
+    milli(200);
+  }
 }
