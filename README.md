@@ -2,3 +2,5 @@ Human connectivity is one of the major factors for productivity, especially in a
 
 <abbr title="schematic diagram"> <img src="project images/project schematic_schem.jpg" width="1000"></abbr>
 
+
+<abbr title="schematic diagram"> <img src="project images/cuwatch_bb.png" width="1000"></abbr>
